@@ -47,7 +47,7 @@ def predict(filename, model, cti, wti, itt):
     data.strip()
     with torch.no_grad():
         model.eval()
-        return run_model(model, itt, data)
+        run_model(model, itt, data)
 
 if __name__ == "__main__":
     if len(sys.argv) != 6:
