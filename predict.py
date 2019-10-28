@@ -52,7 +52,7 @@ def predict(filename, model, cti, wti, itt):
 if __name__ == "__main__":
     if len(sys.argv) != 6:
         sys.exit("Usage: %s model char_to_idx word_to_idx tag_to_idx test_data" % sys.argv[0])
-    for x, y0, y1 in predict(sys.argv[5], *load_model())
+    for x, y0, y1 in predict(sys.argv[5], *load_model()):
         if not FORMAT:
             print((x, y0, y1) if y0 else (x, y1))
         else: # word/sentence segmentation
