@@ -12,7 +12,7 @@ class rnn_crf(nn.Module):
         self.zero_grad()
         self.rnn.batch_size = y0.size(0)
         self.crf.batch_size = y0.size(0)
-        mask = (y0[:, 1:].gt(SOS_IDX) if HRE else xw.gt(PAD_IDX)).float()
+        mask = y0[:, 1:].gt(PAD_IDX).float()
         h = self.rnn(xc, xw, mask)
         Z = self.crf.forward(h, mask)
         score = self.crf.score(h, y0, mask)
