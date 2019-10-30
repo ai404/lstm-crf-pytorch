@@ -13,9 +13,9 @@ def load_data():
     for line in fo:
         line = line.strip()
         if line:
-            seq = line.split(" ")
-            y = [int(seq.pop())] if HRE else [int(i) for i in seq[len(seq) // 2:]]
-            x = [x.split(":") for x in (seq if HRE else seq[:len(seq) // 2])]
+            x, y = line.split("\t")
+            x = [x.split(":") for x in x.split(" ")] 
+            y = [int(y) if HRE else int(x) for x in y.split(" ")]
             xc, xw = zip(*[(list(map(int, xc.split("+"))), int(xw)) for xc, xw in x])
             data.append_item(xc = xc, xw = xw, y0 = y)
         if not (HRE and line): # delimiters (\n, \n\n)

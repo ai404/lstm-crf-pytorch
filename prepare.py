@@ -18,7 +18,7 @@ def load_data():
             data.append([])
             for line in doc.split("\n"):
                 x, y = load_line(line, cti, wti, tti)
-                data[-1].append(x + [y])
+                data[-1].append((x, y))
         for doc in sorted(data, key = lambda x: -len(x)):
             tmp.extend(doc)
             tmp.append(None)
@@ -27,8 +27,8 @@ def load_data():
         for line in fo:
             line = line.strip()
             x, y = load_line(line, cti, wti, tti)
-            data.append(x + y)
-        data.sort(key = lambda x: -len(x))
+            data.append((x, y))
+        data.sort(key = lambda x: -len(x[0])) # sort by source sequence length
     fo.close()
     return data, cti, wti, tti
 
@@ -38,7 +38,7 @@ def load_line(line, cti, wti, tti):
         line, y = line.split("\t")
         if y not in tti:
             tti[y] = len(tti)
-        y = str(tti[y])
+        y = [str(tti[y])]
     for w in line.split(" "):
         w, tag = (w, None) if HRE else re.split("/(?=[^/]+$)", w)
         w0 = normalize(w) # for character embedding

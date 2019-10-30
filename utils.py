@@ -25,7 +25,7 @@ def tokenize(x, norm = True):
 def save_data(filename, data):
     fo = open(filename, "w")
     for seq in data:
-        fo.write((" ".join(seq) if seq else "") + "\n")
+        fo.write((" ".join(seq[0]) + "\t" + " ".join(seq[1]) if seq else "") + "\n")
     fo.close()
 
 def load_tkn_to_idx(filename):
