@@ -21,7 +21,7 @@ def load_data():
                 data[-1].append(x + [y])
         for doc in sorted(data, key = lambda x: -len(x)):
             tmp.extend(doc)
-            tmp.append([])
+            tmp.append(None)
         data = tmp[:-1]
     else:
         for line in fo:
