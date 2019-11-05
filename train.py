@@ -15,7 +15,7 @@ def load_data():
         if line:
             x, y = line.split("\t")
             x = [x.split(":") for x in x.split(" ")] 
-            y = [int(y) if HRE else int(x) for x in y.split(" ")]
+            y = [int(y)] if HRE else [int(x) for x in y.split(" ")]
             xc, xw = zip(*[(list(map(int, xc.split("+"))), int(xw)) for xc, xw in x])
             data.append_item(xc = xc, xw = xw, y0 = y)
         if not (HRE and line): # delimiters (\n, \n\n)

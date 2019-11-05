@@ -14,7 +14,7 @@ EMBED = {"char-cnn": 150, "lookup": 150} # embeddings (char-cnn, char-rnn, looku
 EMBED_SIZE = sum(EMBED.values())
 HIDDEN_SIZE = 1000
 DROPOUT = 0.5
-LEARNING_RATE = 1e-4
+LEARNING_RATE = 2e-4
 EVAL_EVERY = 10
 SAVE_EVERY = 10
 
