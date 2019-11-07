@@ -3,29 +3,27 @@ from utils import *
 from evaluate import *
 
 def load_data():
-    data = dataset()
+    data = dataloader()
     batch = []
     cti = load_tkn_to_idx(sys.argv[2]) # char_to_idx
     wti = load_tkn_to_idx(sys.argv[3]) # word_to_idx
     itt = load_idx_to_tkn(sys.argv[4]) # idx_to_tkn
     print("loading %s..." % sys.argv[5])
-    fo = open(sys.argv[5], "r")
-    for line in fo:
-        line = line.strip()
-        if line:
+    with open(sys.argv[5], "r") as fo:
+        text = fo.read().strip().split("\n" * (HRE + 1))
+    for block in text:
+        for line in block.split("\n"):
             x, y = line.split("\t")
-            x = [x.split(":") for x in x.split(" ")] 
+            x = [x.split(":") for x in x.split(" ")]
             y = [int(y)] if HRE else [int(x) for x in y.split(" ")]
             xc, xw = zip(*[(list(map(int, xc.split("+"))), int(xw)) for xc, xw in x])
-            data.append_item(xc = xc, xw = xw, y0 = y)
-        if not (HRE and line): # delimiters (\n, \n\n)
-            data.append_row()
+            data.append_item(xc = [xc], xw = [xw], y0 = y)
+        data.append_row()
     data.strip()
-    for xc, xw, y0, y0_lens in data.split():
-        xc, xw = data.tensor(xc, xw, doc_lens = y0_lens)
-        _, y0 = data.tensor(None, y0, _sos = True)
+    for _batch in data.split():
+        xc, xw = data.tensor(_batch.xc, _batch.xw, _batch.lens)
+        _, y0 = data.tensor(None, _batch.y0, sos = True)
         batch.append((xc, xw, y0))
-    fo.close()
     print("data size: %d" % (len(batch) * BATCH_SIZE))
     print("batch size: %d" % BATCH_SIZE)
     return batch, cti, wti, itt

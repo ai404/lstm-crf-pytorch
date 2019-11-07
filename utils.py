@@ -75,89 +75,111 @@ def save_checkpoint(filename, model, epoch, loss, time):
         torch.save(checkpoint, filename + ".epoch%d" % epoch)
         print("saved model at epoch %d" % epoch)
 
-def cudify(f):
-    return lambda *x: f(*x).cuda() if CUDA else f(*x)
-
-Tensor = cudify(torch.Tensor)
-LongTensor = cudify(torch.LongTensor)
-randn = cudify(torch.randn)
-zeros = cudify(torch.zeros)
-
-class dataset():
+class dataloader():
     def __init__(self):
-        self.idx = []
-        self.x = [[]] # input sequences
-        self.xc = [[]] # input character sequences
-        self.xw = [[]] # input word sequences
-        self.y0 = [[]] # actual labels
-        self.y1 = [] # predicted labels
+        data = self.data()
+        for a, b in data.__dict__.items():
+            setattr(self, a, b)
 
-    def append_item(self, idx = -1, x = None, xc = None, xw = None, y0 = None, y1 = None):
-        if idx >= 0 : self.idx.append(idx)
-        if x: self.x[-1].append(x)
-        if xc: self.xc[-1].append(xc)
-        if xw: self.xw[-1].append(xw)
+    class data():
+        def __init__(self):
+            self.idx = None # input index
+            self.x0 = [[]] # raw input
+            self.x1 = [[]] # tokenized input
+            self.xc = [[]] # indexed input, character-level
+            self.xw = [[]] # indexed input, word-level
+            self.y0 = [[]] # actual output
+            self.y1 = [] # predicted output
+            self.lens = None # document lengths
+            self.prob = [] # probability
+            self.attn = [] # attention heatmap
+
+    def append_item(self, x0 = None, x1 = None, xc = None, xw = None, y0 = None):
+        if x0: self.x0[-1].extend(x0)
+        if x1: self.x1[-1].extend(x1)
+        if xc: self.xc[-1].extend(xc)
+        if xw: self.xw[-1].extend(xw)
         if y0: self.y0[-1].extend(y0)
-        if y1: self.y1.extend(y1)
 
     def append_row(self):
-        self.x.append([])
+        self.x0.append([])
+        self.x1.append([])
         self.xc.append([])
         self.xw.append([])
         self.y0.append([])
 
     def strip(self):
-        while len(self.xw[-1]) == 0:
-            self.x.pop()
-            self.xc.pop()
-            self.xw.pop()
-            self.y0.pop()
+        if len(self.xw[-1]):
+            return
+        self.x0.pop()
+        self.x1.pop()
+        self.xc.pop()
+        self.xw.pop()
+        self.y0.pop()
 
     def sort(self):
-        self.idx = list(range(len(self.x)))
+        self.idx = list(range(len(self.x0)))
         self.idx.sort(key = lambda x: -len(self.xw[x] if HRE else self.xw[x][0]))
+        self.x0 = [self.x0[i] for i in self.idx]
+        self.x1 = [self.x1[i] for i in self.idx]
         self.xc = [self.xc[i] for i in self.idx]
         self.xw = [self.xw[i] for i in self.idx]
 
     def unsort(self):
-        idx = sorted(range(len(self.idx)), key = lambda x: self.idx[x])
-        self.idx = list(range(len(self.x)))
-        self.xc = [self.xc[i] for i in idx]
-        self.xw = [self.xw[i] for i in idx]
-        self.y1 = [self.y1[i] for i in idx]
+        self.idx = sorted(range(len(self.x0)), key = lambda x: self.idx[x])
+        self.x0 = [self.x0[i] for i in self.idx]
+        self.x1 = [self.x1[i] for i in self.idx]
+        self.xc = [self.xc[i] for i in self.idx]
+        self.xw = [self.xw[i] for i in self.idx]
+        self.y1 = [self.y1[i] for i in self.idx]
+        if self.prob: self.prob = [self.prob[i] for i in self.idx]
+        if self.attn: self.attn = [self.attn[i] for i in self.idx]
 
     def split(self): # split into batches
         for i in range(0, len(self.y0), BATCH_SIZE):
-            j = i + BATCH_SIZE
-            y0 = self.y0[i:j]
-            y0_lens = [len(x) for x in self.xw[i:j]] if HRE else None
+            batch = self.data()
+            j = i + min(BATCH_SIZE, len(self.x0) - i)
+            batch.x0 = self.x0[i:j]
+            batch.y0 = self.y0[i:j]
+            batch.y1 = [[] for _ in range(j - i)]
+            batch.lens = [len(x) for x in self.xw[i:j]]
+            batch.prob = [Tensor([0]) for _ in range(j - i)]
+            batch.attn = [[] for _ in range(j - i)]
             if HRE:
-                xc = [list(x) for x in self.xc[i:j] for x in x]
-                xw = [list(x) for x in self.xw[i:j] for x in x]
+                batch.x1 = [list(x) for x in self.x1[i:j] for x in x]
+                batch.xc = [list(x) for x in self.xc[i:j] for x in x]
+                batch.xw = [list(x) for x in self.xw[i:j] for x in x]
             else:
-                xc = [list(*x) for x in self.xc[i:j]]
-                xw = [list(*x) for x in self.xw[i:j]]
-            yield xc, xw, y0, y0_lens
+                batch.x1 = [list(*x) for x in self.x1[i:j]]
+                batch.xc = [list(*x) for x in self.xc[i:j]]
+                batch.xw = [list(*x) for x in self.xw[i:j]]
+            yield batch
 
-    def tensor(self, bc, bw, _sos = False, _eos = False, doc_lens = None):
-        sos, eos, pad = [SOS_IDX], [EOS_IDX], [PAD_IDX]
-        if doc_lens:
-            d_len = max(doc_lens) # doc_len (Ld)
+    def tensor(self, bc, bw, lens = None, sos = False, eos = False):
+        _p, _s, _e = [PAD_IDX], [SOS_IDX], [EOS_IDX]
+        if HRE and lens:
+            d_len = max(lens) # document length (Ld)
             i, _bc, _bw = 0, [], []
-            for j in doc_lens:
-                _bc.extend(bc[i:i + j] + [[pad]] * (d_len - j))
-                _bw.extend(bw[i:i + j] + [pad] * (d_len - j))
+            for j in lens:
+                if sos:
+                    _bc.append([[]])
+                    _bw.append([])
+                _bc.extend(bc[i:i + j] + [[[]] for _ in range(d_len - j)])
+                _bw.extend(bw[i:i + j] + [[] for _ in range(d_len - j)])
+                if eos:
+                    _bc.append([[]])
+                    _bw.append([])
                 i += j
             bc, bw = _bc, _bw
         if bw:
-            s_len = max(map(len, bw)) # sent_len (Ls)
-            bw = [sos * _sos + x + eos * _eos + pad * (s_len - len(x)) for x in bw]
+            s_len = max(map(len, bw)) # sentence length (Ls)
+            bw = [_s * sos + x + _e * eos + _p * (s_len - len(x)) for x in bw]
             bw = LongTensor(bw) # [B * Ld, Ls]
         if bc:
-            w_len = max(max(map(len, x)) for x in bc) # word_len (Lw)
-            w_pad = [pad * (w_len + 2)]
-            bc = [[sos + w + eos + pad * (w_len - len(w)) for w in x] for x in bc]
-            bc = [w_pad * _sos + x + w_pad * (s_len - len(x) + _eos) for x in bc]
+            w_len = max(max(map(len, x)) for x in bc) # word length (Lw)
+            w_pad = [_p * (w_len + 2)]
+            bc = [[_s + w + _e + _p * (w_len - len(w)) for w in x] for x in bc]
+            bc = [w_pad * sos + x + w_pad * (s_len - len(x) + eos) for x in bc]
             bc = LongTensor(bc) # [B * Ld, Ls, Lw]
         return bc, bw
 

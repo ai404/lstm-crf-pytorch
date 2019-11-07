@@ -29,6 +29,12 @@ EOS_IDX = 2
 UNK_IDX = 3
 
 CUDA = torch.cuda.is_available()
+if CUDA:
+    Tensor = torch.cuda.FloatTensor
+    LongTensor = torch.cuda.LongTensor
+    randn = lambda *x: torch.randn(*x).cuda()
+    zeros = lambda *x: torch.zeros(*x).cuda()
+    # torch.cuda.set_device(0)
 torch.manual_seed(0) # for reproducibility
 
 KEEP_IDX = False # use the existing indices when preparing additional data

@@ -12,38 +12,36 @@ def load_model():
 
 def run_model(model, itt, data):
     data.sort()
-    for xc, xw, _, y0_lens in data.split():
-        xc, xw = data.tensor(xc, xw, doc_lens = y0_lens)
-        y1 = model.decode(xc, xw, y0_lens)
-        data.append_item(y1 = [[itt[i] for i in x] for x in y1])
+    for batch in data.split():
+        xc, xw = data.tensor(batch.xc, batch.xw, batch.lens)
+        y1 = model.decode(xc, xw, batch.lens)
+        data.y1.extend([[itt[i] for i in x] for x in y1])
     data.unsort()
-    for x, y0, y1 in zip(data.x, data.y0, data.y1):
+    for x0, y0, y1 in zip(data.x0, data.y0, data.y1):
         if HRE:
-            for x, y0, y1 in zip(x, y0, y1):
-                yield x, y0, y1
+            for x0, y0, y1 in zip(x0, y0, y1):
+                yield x0, y0, y1
         else:
-            yield x, y0, y1
+            yield x0, y0, y1
 
 def predict(filename, model, cti, wti, itt):
-    data = dataset()
-    fo = open(filename)
-    for line in fo:
-        line = line.strip()
-        if line:
-            if re.match("(\S+/\S+( |$))+$", line): # word/tag
-                x, y = zip(*[re.split("/(?=[^/]+$)", x) for x in line.split(" ")])
-                line = " ".join(x)
-            elif re.match("\S+( \S+)*\t\S+$", line): # sentence \t label
-                line, *y = line.split("\t")
+    data = dataloader()
+    with open(filename) as fo:
+        text = fo.read().strip().split("\n" * (HRE + 1))
+    for block in text:
+        for x0 in block.split("\n"):
+            if re.match("(\S+/\S+( |$))+$", x0): # word/tag
+                x0, y0 = zip(*[re.split("/(?=[^/]+$)", x) for x in x0.split(" ")])
+                x0 = " ".join(x0)
+            elif re.match("\S+( \S+)*\t\S+$", x0): # sentence \t label
+                x0, *y0 = x0.split("\t")
             else: # no ground truth provided
-                y = []
-            x = tokenize(line)
-            xc = [[cti[c] if c in cti else UNK_IDX for c in w] for w in x]
-            xw = [wti[w] if w in wti else UNK_IDX for w in x]
-            data.append_item(x = line, xc = xc, xw = xw, y0 = y)
-        if not (HRE and line): # delimiters (\n, \n\n)
-            data.append_row()
-    fo.close()
+                y0 = []
+            x1 = tokenize(x0)
+            xc = [[cti[c] if c in cti else UNK_IDX for c in w] for w in x1]
+            xw = [wti[w] if w in wti else UNK_IDX for w in x1]
+            data.append_item(x0 = [x0], xc = [xc], xw = [xw], y0 = y0)
+        data.append_row()
     data.strip()
     with torch.no_grad():
         model.eval()
