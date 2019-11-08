@@ -22,7 +22,7 @@ def run_model(model, itt, data):
             for x0, y0, y1 in zip(x0, y0, y1):
                 yield x0, y0, y1
         else:
-            yield x0, y0, y1
+            yield x0[0], y0, y1
 
 def predict(filename, model, cti, wti, itt):
     data = dataloader()
