@@ -27,7 +27,7 @@ python3 word+iob.py sample.en
 shuf sample.en.word+iob > data
 head -100 data > test
 sed -n '101,200p' data > valid
-tail -n +201 data > train
+tail +201 data > train
 python3 prepare.py train
 ```
 
