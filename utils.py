@@ -77,8 +77,7 @@ def save_checkpoint(filename, model, epoch, loss, time):
 
 class dataloader():
     def __init__(self):
-        data = self.data()
-        for a, b in data.__dict__.items():
+        for a, b in self.data().__dict__.items():
             setattr(self, a, b)
 
     class data():
