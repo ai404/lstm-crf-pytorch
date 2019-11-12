@@ -2,9 +2,9 @@ from utils import *
 from embedding import embed
 
 class rnn_crf(nn.Module):
-    def __init__(self, char_vocab_size, word_vocab_size, num_tags):
+    def __init__(self, cti_size, wti_size, num_tags):
         super().__init__()
-        self.rnn = rnn(char_vocab_size, word_vocab_size, num_tags)
+        self.rnn = rnn(cti_size, wti_size, num_tags)
         self.crf = crf(num_tags)
         self = self.cuda() if CUDA else self
 
@@ -29,12 +29,12 @@ class rnn_crf(nn.Module):
         return self.crf.decode(h, mask)
 
 class rnn(nn.Module):
-    def __init__(self, char_vocab_size, word_vocab_size, num_tags):
+    def __init__(self, cti_size, wti_size, num_tags):
         super().__init__()
         self.batch_size = 0
 
         # architecture
-        self.embed = embed(char_vocab_size, word_vocab_size, HRE)
+        self.embed = embed(cti_size, wti_size, HRE)
         self.rnn = getattr(nn, RNN_TYPE)(
             input_size = EMBED_SIZE,
             hidden_size = HIDDEN_SIZE // NUM_DIRS,
