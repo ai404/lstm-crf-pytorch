@@ -30,10 +30,10 @@ def predict(filename, model, cti, wti, itt):
         text = fo.read().strip().split("\n" * (HRE + 1))
     for block in text:
         for x0 in block.split("\n"):
-            if FORMAT == "word/tag":
+            if re.match("(\S+/\S+ ?))+$", x0): # word/tag
                 x0, y0 = zip(*[re.split("/(?=[^/]+$)", x) for x in x0.split(" ")])
                 x0 = " ".join(x0)
-            elif FORMAT == "tsv": # HRE
+            elif re.match("(\S+ ?)*\t\S+$", x0): # sentence \t label
                 x0, *y0 = x0.split("\t")
             else: # no ground truth provided
                 y0 = []
