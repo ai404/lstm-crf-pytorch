@@ -30,10 +30,10 @@ def predict(filename, model, cti, wti, itt):
         text = fo.read().strip().split("\n" * (HRE + 1))
     for block in text:
         for x0 in block.split("\n"):
-            if re.match("(\S+/\S+( |$))+$", x0): # word/tag
+            if FORMAT == "word/tag":
                 x0, y0 = zip(*[re.split("/(?=[^/]+$)", x) for x in x0.split(" ")])
                 x0 = " ".join(x0)
-            elif re.match("\S+( \S+)*\t\S+$", x0): # sentence \t label
+            elif FORMAT == "tsv": # HRE
                 x0, *y0 = x0.split("\t")
             else: # no ground truth provided
                 y0 = []
@@ -51,7 +51,7 @@ if __name__ == "__main__":
     if len(sys.argv) != 6:
         sys.exit("Usage: %s model char_to_idx word_to_idx tag_to_idx test_data" % sys.argv[0])
     for x0, y0, y1 in predict(sys.argv[5], *load_model()):
-        if not FORMAT:
+        if not TASK:
             print((x0, y0, y1) if y0 else (x0, y1))
         else: # word/sentence segmentation
             if y0:

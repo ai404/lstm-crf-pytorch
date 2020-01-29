@@ -4,7 +4,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 UNIT = "word" # unit of tokenization (char, word, sent)
-FORMAT = None # format (None, word-segmentation, sentence-segmentation)
+TASK = None # task (None, word-segmentation, sentence-segmentation)
+FORMAT = None # format (None, word/tag, tsv)
 RNN_TYPE = "LSTM" # LSTM or GRU
 NUM_DIRS = 2 # unidirectional: 1, bidirectional: 2
 NUM_LAYERS = 2
@@ -29,13 +30,13 @@ EOS_IDX = 2
 UNK_IDX = 3
 
 CUDA = torch.cuda.is_available()
-if CUDA:
-    Tensor = torch.cuda.FloatTensor
-    LongTensor = torch.cuda.LongTensor
-    randn = lambda *x: torch.randn(*x).cuda()
-    zeros = lambda *x: torch.zeros(*x).cuda()
-    # torch.cuda.set_device(0)
 torch.manual_seed(0) # for reproducibility
+# torch.cuda.set_device(0)
 
-KEEP_IDX = False # use the existing indices when preparing additional data
+Tensor = torch.cuda.FloatTensor if CUDA else torch.FloatTensor
+LongTensor = torch.cuda.LongTensor if CUDA else torch.LongTensor
+randn = lambda *x: torch.randn(*x).cuda() if CUDA else torch.randn
+zeros = lambda *x: torch.zeros(*x).cuda() if CUDA else torch.zeros
+
+KEEP_IDX = False # use the existing indices when adding more training data
 NUM_DIGITS = 4 # number of digits to print

@@ -194,9 +194,9 @@ def iob_to_txt(x, y): # for word/sentence segmentation
         if i and k[0] == "B":
             out.append([])
         out[-1].append(j)
-    if FORMAT == "word-segmentation":
+    if TASK == "word-segmentation":
         d1, d2 = "", " "
-    if FORMAT == "sentence-segmentation":
+    if TASK == "sentence-segmentation":
         d1, d2 = " ", "\n"
     return d2.join(d1.join(x) for x in out)
 
