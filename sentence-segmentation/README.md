@@ -18,16 +18,16 @@ sentence
 2. Run `word+iob.py` to tag words in IOB2 format.
 
 ```
-python3 word+iob.py sample.en
+python3 word+iob.py sample.txt
 ```
 
 3. Split the data into training, test and validation sets and run `prepare.py` to make CSV and index files.
 
 ```
-shuf sample.en.word+iob > data
-head -100 data > test
-sed -n '101,200p' data > valid
-tail +201 data > train
+shuf sample.txt.word+iob > data
+head -1000 data > test
+sed -n '1001,2000p' data > valid
+tail +2001 data > train
 python3 prepare.py train
 ```
 
