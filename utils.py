@@ -75,29 +75,50 @@ def save_checkpoint(filename, model, epoch, loss, time):
         torch.save(checkpoint, filename + ".epoch%d" % epoch)
         print("saved model at epoch %d" % epoch)
 
+class dataset():
+    def __init__(self):
+        self.idx = None # input index
+        self.x0 = [[]] # raw input
+        self.x1 = [[]] # tokenized input
+        self.xc = [[]] # indexed input, character-level
+        self.xw = [[]] # indexed input, word-level
+        self.y0 = [[]] # actual output
+        self.y1 = [] # predicted output
+        self.lens = None # document lengths
+        self.prob = [] # probability
+        self.attn = [] # attention heatmap
+
+    def sort(self):
+        self.idx = list(range(len(self.x0)))
+        self.idx.sort(key = lambda x: -len(self.xw[x]))
+        # self.idx.sort(key = lambda x: -len(self.xw[x] if HRE else self.xw[x][0]))
+        self.x0 = [self.x0[i] for i in self.idx]
+        self.x1 = [self.x1[i] for i in self.idx]
+        self.xc = [self.xc[i] for i in self.idx]
+        self.xw = [self.xw[i] for i in self.idx]
+
+    def unsort(self):
+        self.idx = sorted(range(len(self.x0)), key = lambda x: self.idx[x])
+        self.x0 = [self.x0[i] for i in self.idx]
+        self.x1 = [self.x1[i] for i in self.idx]
+        self.xc = [self.xc[i] for i in self.idx]
+        self.xw = [self.xw[i] for i in self.idx]
+        self.y1 = [self.y1[i] for i in self.idx]
+        if self.prob:
+            self.prob = [self.prob[i] for i in self.idx]
+        if self.attn:
+            self.attn = [self.attn[i] for i in self.idx]
+
 class dataloader():
     def __init__(self):
-        for a, b in self.data().__dict__.items():
+        for a, b in dataset().__dict__.items():
             setattr(self, a, b)
 
-    class data():
-        def __init__(self):
-            self.idx = None # input index
-            self.x0 = [[]] # raw input
-            self.x1 = [[]] # tokenized input
-            self.xc = [[]] # indexed input, character-level
-            self.xw = [[]] # indexed input, word-level
-            self.y0 = [[]] # actual output
-            self.y1 = [] # predicted output
-            self.lens = None # document lengths
-            self.prob = [] # probability
-            self.attn = [] # attention heatmap
-
     def append_item(self, x0 = None, x1 = None, xc = None, xw = None, y0 = None):
-        if x0: self.x0[-1].extend(x0)
-        if x1: self.x1[-1].extend(x1)
-        if xc: self.xc[-1].extend(xc)
-        if xw: self.xw[-1].extend(xw)
+        if x0: self.x0[-1].append(x0)
+        if x1: self.x1[-1].append(x1)
+        if xc: self.xc[-1].append(xc)
+        if xw: self.xw[-1].append(xw)
         if y0: self.y0[-1].extend(y0)
 
     def append_row(self):
@@ -116,27 +137,9 @@ class dataloader():
         self.xw.pop()
         self.y0.pop()
 
-    def sort(self):
-        self.idx = list(range(len(self.x0)))
-        self.idx.sort(key = lambda x: -len(self.xw[x] if HRE else self.xw[x][0]))
-        self.x0 = [self.x0[i] for i in self.idx]
-        self.x1 = [self.x1[i] for i in self.idx]
-        self.xc = [self.xc[i] for i in self.idx]
-        self.xw = [self.xw[i] for i in self.idx]
-
-    def unsort(self):
-        self.idx = sorted(range(len(self.x0)), key = lambda x: self.idx[x])
-        self.x0 = [self.x0[i] for i in self.idx]
-        self.x1 = [self.x1[i] for i in self.idx]
-        self.xc = [self.xc[i] for i in self.idx]
-        self.xw = [self.xw[i] for i in self.idx]
-        self.y1 = [self.y1[i] for i in self.idx]
-        if self.prob: self.prob = [self.prob[i] for i in self.idx]
-        if self.attn: self.attn = [self.attn[i] for i in self.idx]
-
     def split(self): # split into batches
         for i in range(0, len(self.y0), BATCH_SIZE):
-            batch = self.data()
+            batch = dataset()
             j = i + min(BATCH_SIZE, len(self.x0) - i)
             batch.x0 = self.x0[i:j]
             batch.y0 = self.y0[i:j]
@@ -149,9 +152,9 @@ class dataloader():
                 batch.xc = [list(x) for x in self.xc[i:j] for x in x]
                 batch.xw = [list(x) for x in self.xw[i:j] for x in x]
             else:
-                batch.x1 = [list(*x) for x in self.x1[i:j]]
-                batch.xc = [list(*x) for x in self.xc[i:j]]
-                batch.xw = [list(*x) for x in self.xw[i:j]]
+                batch.x1 = [x[0] for x in self.x1[i:j]]
+                batch.xc = [x[0] for x in self.xc[i:j]]
+                batch.xw = [x[0] for x in self.xw[i:j]]
             yield batch
 
     def tensor(self, bc, bw, lens = None, sos = False, eos = False):
