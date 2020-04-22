@@ -50,7 +50,7 @@ def predict(filename, model, cti, wti, itt):
 if __name__ == "__main__":
     if len(sys.argv) != 6:
         sys.exit("Usage: %s model char_to_idx word_to_idx tag_to_idx test_data" % sys.argv[0])
-    result = predict(sys.argv[5], *load_model()):
+    result = predict(sys.argv[5], *load_model())
     for x0, y0, y1 in result:
         if not TASK:
             print((x0, y0, y1) if y0 else (x0, y1))
