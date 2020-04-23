@@ -17,7 +17,7 @@ def load_data():
             x = [x.split(":") for x in x.split(" ")]
             y = [int(y)] if HRE else [int(x) for x in y.split(" ")]
             xc, xw = zip(*[(list(map(int, xc.split("+"))), int(xw)) for xc, xw in x])
-            data.append_item(xc = [xc], xw = [xw], y0 = y)
+            data.append_item(xc = xc, xw = xw, y0 = y)
         data.append_row()
     data.strip()
     for _batch in data.split():

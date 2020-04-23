@@ -75,7 +75,7 @@ def save_checkpoint(filename, model, epoch, loss, time):
         torch.save(checkpoint, filename + ".epoch%d" % epoch)
         print("saved model at epoch %d" % epoch)
 
-class dataset():
+class data():
     def __init__(self):
         self.idx = None # input index
         self.x0 = [[]] # raw input
@@ -91,7 +91,6 @@ class dataset():
     def sort(self):
         self.idx = list(range(len(self.x0)))
         self.idx.sort(key = lambda x: -len(self.xw[x]))
-        # self.idx.sort(key = lambda x: -len(self.xw[x] if HRE else self.xw[x][0]))
         self.x0 = [self.x0[i] for i in self.idx]
         self.x1 = [self.x1[i] for i in self.idx]
         self.xc = [self.xc[i] for i in self.idx]
@@ -111,7 +110,7 @@ class dataset():
 
 class dataloader():
     def __init__(self):
-        for a, b in dataset().__dict__.items():
+        for a, b in data().__dict__.items():
             setattr(self, a, b)
 
     def append_item(self, x0 = None, x1 = None, xc = None, xw = None, y0 = None):
@@ -139,7 +138,7 @@ class dataloader():
 
     def split(self): # split into batches
         for i in range(0, len(self.y0), BATCH_SIZE):
-            batch = dataset()
+            batch = data()
             j = i + min(BATCH_SIZE, len(self.x0) - i)
             batch.x0 = self.x0[i:j]
             batch.y0 = self.y0[i:j]
@@ -152,9 +151,9 @@ class dataloader():
                 batch.xc = [list(x) for x in self.xc[i:j] for x in x]
                 batch.xw = [list(x) for x in self.xw[i:j] for x in x]
             else:
-                batch.x1 = [x[0] for x in self.x1[i:j]]
-                batch.xc = [x[0] for x in self.xc[i:j]]
-                batch.xw = [x[0] for x in self.xw[i:j]]
+                batch.x1 = [list(*x) for x in self.x1[i:j]]
+                batch.xc = [list(*x) for x in self.xc[i:j]]
+                batch.xw = [list(*x) for x in self.xw[i:j]]
             yield batch
 
     def tensor(self, bc, bw, lens = None, sos = False, eos = False):

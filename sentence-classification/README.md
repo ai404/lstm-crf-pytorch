@@ -22,10 +22,11 @@ python3 block-tokenize.py L1,L2,L3 train.raw
 python3 block-tokenize.py L1,L2,L3 valid.raw
 ```
 
-3. Set `UNIT` to `sent` in `parameters.py` for hierarchical encoding.
+3. Modify the following settings in `parameters.py` for hierarchical encoding.
 
 ```
 UNIT = "sent"
+TASK = None
 ```
 
 4. Run `prepare.py` to make CSV and index files.
@@ -36,7 +37,7 @@ mv valid.raw.block valid
 python3 prepare.py train
 ```
 
-5. Train your model. You can modify the hyperparameters in `parameters.py`.
+5. Train your model. You can also modify the hyperparameters in `parameters.py`.
 
 ```
 python3 train.py model train.char_to_idx train.word_to_idx train.tag_to_idx train.csv valid N
