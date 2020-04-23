@@ -8,7 +8,7 @@ This is a simple tutorial for POS tagging using the scripts here.
 unzip brown.zip
 ```
 
-2. You might want to train models with your own tagset by running a script like `brown2ptb.py`, which converts the Brown Corpus tagset to a Penn Treebank (PTB) like tagset.
+2. You can train models with your own tagset by running a script like `brown2ptb.py`, which converts the Brown Corpus tagset to a Penn Treebank (PTB) like tagset.
 
 ```
 python3 brown2ptb.py
@@ -24,7 +24,7 @@ tail +2001 data > train
 python3 prepare.py train
 ```
 
-4. Train your model. You can modify the hyperparameters in `parameters.py`.
+4. Train your model. You can also modify the hyperparameters in `parameters.py`.
 
 ```
 python3 train.py model train.char_to_idx train.word_to_idx train.tag_to_idx train.csv valid 100
