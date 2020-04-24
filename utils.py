@@ -91,15 +91,15 @@ class data():
     def sort(self):
         self.idx = list(range(len(self.x0)))
         self.idx.sort(key = lambda x: -len(self.xw[x]))
-        self.x0 = [self.x0[i] for i in self.idx]
-        self.x1 = [self.x1[i] for i in self.idx]
+        if self.x0: self.x0 = [self.x0[i] for i in self.idx]
+        if self.x1: self.x1 = [self.x1[i] for i in self.idx]
         self.xc = [self.xc[i] for i in self.idx]
         self.xw = [self.xw[i] for i in self.idx]
 
     def unsort(self):
         self.idx = sorted(range(len(self.x0)), key = lambda x: self.idx[x])
-        self.x0 = [self.x0[i] for i in self.idx]
-        self.x1 = [self.x1[i] for i in self.idx]
+        if self.x0: self.x0 = [self.x0[i] for i in self.idx]
+        if self.x1: self.x1 = [self.x1[i] for i in self.idx]
         self.xc = [self.xc[i] for i in self.idx]
         self.xw = [self.xw[i] for i in self.idx]
         self.y1 = [self.y1[i] for i in self.idx]
