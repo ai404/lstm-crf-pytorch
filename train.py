@@ -56,8 +56,8 @@ def train():
         loss_sum = 0
         timer = time()
         for xc, xw, y0 in tqdm(batch):
-            xw = LongTensor(xw)
-            y0 = LongTensor(y0)
+            xw = xw.cuda() if CUDA else xw
+            y0 = y0.cuda() if CUDA else y0
             loss = model(xc, xw, y0) # forward pass and compute loss
             loss.backward() # compute gradients
             optim.step() # update parameters
