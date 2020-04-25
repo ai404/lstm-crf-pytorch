@@ -101,7 +101,7 @@ class Dataset:
             "sentiment": self.data.loc[idx, "sentiment"],
             "target": target
         }"""
-        return [], LongTensor(ids), LongTensor(target)
+        return [], ids, target
 
 
 

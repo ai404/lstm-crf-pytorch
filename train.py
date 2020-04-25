@@ -56,7 +56,8 @@ def train():
         loss_sum = 0
         timer = time()
         for xc, xw, y0 in tqdm(batch):
-            print(f"Batch {bidx}...")
+            xw = LongTensor(xw)
+            y0 = LongTensor(y0)
             loss = model(xc, xw, y0) # forward pass and compute loss
             loss.backward() # compute gradients
             optim.step() # update parameters
