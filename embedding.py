@@ -6,15 +6,18 @@ class embed(nn.Module):
         self.hre = hre # hierarchical recurrent encoding
 
         # architecture
-        for model, dim in EMBED.items():
-            if model == "char-cnn":
-                self.char_embed = self.cnn(cti_size, dim)
-            elif model == "char-rnn":
-                self.char_embed = self.rnn(cti_size, dim)
-            if model == "lookup":
-                self.word_embed = nn.Embedding(wti_size, dim, padding_idx = PAD_IDX)
-            elif model == "sae":
-                self.word_embed = self.sae(wti_size, dim)
+        if BERT:
+            self.word_embed = transformers.DistilBertModel.from_pretrained(BERT_PATH, config=MODEL_CONFIG)
+        else:
+            for model, dim in EMBED.items():
+                if model == "char-cnn":
+                    self.char_embed = self.cnn(cti_size, dim)
+                elif model == "char-rnn":
+                    self.char_embed = self.rnn(cti_size, dim)
+                if model == "lookup":
+                    self.word_embed = nn.Embedding(wti_size, dim, padding_idx = PAD_IDX)
+                elif model == "sae":
+                    self.word_embed = self.sae(wti_size, dim)
         if self.hre:
             self.sent_embed = self.rnn(EMBED_SIZE, EMBED_SIZE, True)
         self = self.cuda() if CUDA else self
@@ -23,8 +26,9 @@ class embed(nn.Module):
         hc, hw = None, None
         if "char-cnn" in EMBED or "char-rnn" in EMBED:
             hc = self.char_embed(xc)
-        if "lookup" in EMBED or "sae" in EMBED:
-            hw = self.word_embed(xw)
+        if "lookup" in EMBED or "sae" in EMBED or "bert" in EMBED:
+            hw = self.word_embed(xw)[0]
+        #print([type(h) for h in [hc, hw]])
         h = torch.cat([h for h in [hc, hw] if type(h) == torch.Tensor], 2)
         if self.hre:
             h = self.sent_embed(h) if self.hre else h

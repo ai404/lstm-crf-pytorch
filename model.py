@@ -12,7 +12,8 @@ class rnn_crf(nn.Module):
         self.zero_grad()
         self.rnn.batch_size = y0.size(0)
         self.crf.batch_size = y0.size(0)
-        mask = y0[:, 1:].gt(PAD_IDX).float()
+        #mask = y0[:, 1:].gt(PAD_IDX).float()
+        mask = y0.gt(PAD_IDX).float()
         h = self.rnn(xc, xw, mask)
         Z = self.crf.forward(h, mask)
         score = self.crf.score(h, y0, mask)
@@ -60,9 +61,9 @@ class rnn(nn.Module):
         x = self.embed(xc, xw)
         if HRE: # [B * doc_len, 1, H] -> [B, doc_len, H]
             x = x.view(self.batch_size, -1, EMBED_SIZE)
-        x = nn.utils.rnn.pack_padded_sequence(x, mask.sum(1).int(), batch_first = True)
+        #x = nn.utils.rnn.pack_padded_sequence(x, mask.sum(1).int(), batch_first = True)
         h, _ = self.rnn(x, hs)
-        h, _ = nn.utils.rnn.pad_packed_sequence(h, batch_first = True)
+        #h, _ = nn.utils.rnn.pad_packed_sequence(h, batch_first = True)
         h = self.out(h)
         h *= mask.unsqueeze(2)
         return h
@@ -100,7 +101,7 @@ class crf(nn.Module):
         score = Tensor(self.batch_size).fill_(0.)
         h = h.unsqueeze(3)
         trans = self.trans.unsqueeze(2)
-        for t in range(h.size(1)): # recursion through the sequence
+        for t in range(h.size(1)-1): # recursion through the sequence
             mask_t = mask[:, t]
             emit_t = torch.cat([h[t, y0[t + 1]] for h, y0 in zip(h, y0)])
             trans_t = torch.cat([trans[y0[t + 1], y0[t]] for y0 in y0])

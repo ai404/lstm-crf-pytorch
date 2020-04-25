@@ -2,15 +2,20 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import transformers
 
-UNIT = "sent" # unit of tokenization (char, word, sent)
+UNIT = "word" # unit of tokenization (char, word, sent)
 TASK = None # task (None, word-segmentation, sentence-segmentation)
 RNN_TYPE = "LSTM" # LSTM or GRU
 NUM_DIRS = 2 # unidirectional: 1, bidirectional: 2
 NUM_LAYERS = 2
 BATCH_SIZE = 128
 HRE = (UNIT == "sent") # hierarchical recurrent encoding
-EMBED = {"lookup": 300} # embeddings (char-cnn, char-rnn, lookup, sae)
+BERT = True #use Bert as embedding layer
+BERT_PATH = "distilbert-base-uncased"
+MODEL_CONFIG = transformers.DistilBertConfig.from_pretrained(BERT_PATH)
+
+EMBED = {"bert": 768} # embeddings (char-cnn, char-rnn, lookup, sae, bert)
 EMBED_SIZE = sum(EMBED.values())
 HIDDEN_SIZE = 1000
 DROPOUT = 0.5
@@ -34,8 +39,8 @@ torch.manual_seed(0) # for reproducibility
 
 Tensor = torch.cuda.FloatTensor if CUDA else torch.FloatTensor
 LongTensor = torch.cuda.LongTensor if CUDA else torch.LongTensor
-randn = lambda *x: torch.randn(*x).cuda() if CUDA else torch.randn
-zeros = lambda *x: torch.zeros(*x).cuda() if CUDA else torch.zeros
+randn = lambda *x: torch.randn(*x).cuda() if CUDA else torch.randn(*x)
+zeros = lambda *x: torch.zeros(*x).cuda() if CUDA else torch.zeros(*x)
 
 KEEP_IDX = False # use the existing indices when adding more training data
 NUM_DIGITS = 4 # number of digits to print

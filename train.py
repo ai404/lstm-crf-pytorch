@@ -1,6 +1,7 @@
 from model import *
 from utils import *
 from evaluate import *
+from tqdm import tqdm
 
 def load_data():
     data = dataloader()
@@ -30,7 +31,20 @@ def load_data():
 
 def train():
     num_epochs = int(sys.argv[-1])
-    batch, cti, wti, itt = load_data()
+    if BERT:
+        from prepare_dataset_challenge import Dataset, TAG_TO_IX
+        from torch.utils.data import DataLoader
+        from tokenizers import BertWordPieceTokenizer
+
+        tokenizer = BertWordPieceTokenizer(f'{BERT_PATH}/vocab.txt', lowercase=True)
+
+        train_dataset = Dataset(sys.argv[2], tokenizer)
+        batch = DataLoader(train_dataset, batch_size=16,
+                                shuffle=True, num_workers=4, drop_last=True)
+        cti, wti, itt = {}, {}, TAG_TO_IX
+    else:
+        batch, cti, wti, itt = load_data()
+    print(len(cti), len(wti), len(itt))
     model = rnn_crf(len(cti), len(wti), len(itt))
     optim = torch.optim.Adam(model.parameters(), lr = LEARNING_RATE)
     print(model)
@@ -38,9 +52,11 @@ def train():
     filename = re.sub("\.epoch[0-9]+$", "", sys.argv[1])
     print("training model...")
     for ei in range(epoch + 1, epoch + num_epochs + 1):
+        print(f"Epoch {ei}...")
         loss_sum = 0
         timer = time()
-        for xc, xw, y0 in batch:
+        for xc, xw, y0 in tqdm(batch):
+            print(f"Batch {bidx}...")
             loss = model(xc, xw, y0) # forward pass and compute loss
             loss.backward() # compute gradients
             optim.step() # update parameters
@@ -53,13 +69,13 @@ def train():
             save_checkpoint(filename, model, ei, loss_sum, timer)
         if EVAL_EVERY and (ei % EVAL_EVERY == 0 or ei == epoch + num_epochs):
             args = [model, cti, wti, itt]
-            evaluate(predict(sys.argv[6], *args), True)
+            evaluate(predict(sys.argv[-2], *args), True)
             model.train()
             print()
 
 if __name__ == "__main__":
-    if len(sys.argv) not in [7, 8]:
+    if len(sys.argv) not in [4, 5, 7, 8]:
         sys.exit("Usage: %s model char_to_idx word_to_idx tag_to_idx training_data (validation_data) num_epoch" % sys.argv[0])
-    if len(sys.argv) == 7:
+    if len(sys.argv) in [4, 7]:
         EVAL_EVERY = False
     train()
