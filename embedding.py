@@ -8,8 +8,8 @@ class embed(nn.Module):
         # architecture
         if BERT:
             self.word_embed = transformers.DistilBertModel.from_pretrained(BERT_PATH, config=MODEL_CONFIG)
-            for param in self.word_embed.bert.bert.parameters():
-                param.requires_grad = False
+            #for param in self.word_embed.bert.bert.parameters():
+            #    param.requires_grad = False
         else:
             for model, dim in EMBED.items():
                 if model == "char-cnn":
